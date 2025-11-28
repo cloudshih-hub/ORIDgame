@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORID提問分類挑戰賽</title>
+    
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-N8VL4XS');</script>
+    <!-- End Google Tag Manager -->
+
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --primary-color: #007bff;
+            --o-color: #3498db; /* Objective - Blue */
+            --r-color: #f1c40f; /* Reflective - Yellow */
+            --i-color: #8e44ad; /* Interpretive - Purple */
+            --d-color: #2ecc71; /* Decisional - Green */
+            --correct-color: #28a745;
+            --incorrect-color: #dc3545;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        }
+
+        /* 全局與響應式設計 */
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            margin: 0;
+            padding: 1.5rem 1rem;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        #orid-challenge-container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 頁首 */
+        .tool-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .tool-header .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: block;
+        }
+
+        .tool-header .tool-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: var(--primary-color);
+        }
+
+        .tool-header .tool-description {
+            font-size: 1rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        /* 遊戲畫面 */
+        .game-area {
+            display: none; /* 初始隱藏 */
+        }
+
+        /* 進度條 */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 1rem;
+            height: 10px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 1rem;
+            transition: width 0.3s ease-in-out;
+        }
+        
+        #progress-text {
+            margin-top: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        /* 翻卡片動畫 */
+        .card-container {
+            perspective: 1000px;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+        
+        #question-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            min-height: 180px;
+        }
+
+        #question-card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            border-radius: 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+
+        .card-front {
+            z-index: 2;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            flex-direction: column;
+        }
+        
+        #question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        #answer-type {
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+        
+        #answer-explanation {
+            font-size: 1rem;
+            color: #444;
+        }
+
+        /* 按鈕區 */
+        .answer-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .orid-btn {
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+
+        .orid-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .orid-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .orid-btn.selected {
+            border: 4px solid #333;
+        }
+        
+        .orid-btn.correct {
+            animation: pulse-correct 0.8s;
+        }
+        
+        .orid-btn.incorrect.selected {
+            animation: shake-incorrect 0.5s;
+        }
+
+        @keyframes pulse-correct {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        @keyframes shake-incorrect {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+
+        #btn-o { background-color: var(--o-color); }
+        #btn-r { background-color: var(--r-color); }
+        #btn-i { background-color: var(--i-color); }
+        #btn-d { background-color: var(--d-color); }
+
+        /* 開始與結果畫面 */
+        .start-screen, .result-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-screen {
+            display: none; /* 初始隱藏 */
+        }
+        
+        #score-text {
+            font-size: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        #score-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        #final-message {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: #555;
+        }
+
+        .start-btn, .restart-btn {
+            padding: 0.8rem 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .start-btn:hover, .restart-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* 頁尾版權 */
+        .tool-footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .tool-footer a {
+            color: #555;
+            text-decoration: none;
+        }
+        .tool-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 手機版適應 */
+        @media (max-width: 480px) {
+            html {
+                font-size: 14px;
+            }
+            body {
+                padding: 1rem 0.5rem;
+            }
+            #orid-challenge-container {
+                padding: 1rem;
+            }
+            .tool-header .tool-title {
+                font-size: 1.5rem;
+            }
+            #question-text {
+                font-size: 1.1rem;
+            }
+            .orid-btn {
+                padding: 0.8rem;
+                font-size: 1rem;
+            }
+            .card-container, #question-card {
+                min-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N8VL4XS"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <main id="orid-challenge-container" role="main">
+        <header class="tool-header">
+            <img src="https://image.fevercdn.com?bucket=picture-original.fevercdn.com&filepath=parenting%2F10%2F1943%2Fc2a58c0654315c4e7bf46e50.png" alt="翻轉教育 Logo" class="logo">
+            <h1 class="tool-title">ORID 提問分類挑戰賽</h1>
+            <p class="tool-description">測試你對 ORID 提問法的掌握度！請將問題分類到對應的類型。</p>
+        </header>
+
+        <!-- 開始畫面 -->
+        <div class="start-screen" id="start-screen">
+            <button class="start-btn" id="start-btn">開始挑戰</button>
+        </div>
+
+        <!-- 遊戲主畫面 -->
+        <div class="game-area" id="game-area">
+            <div class="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <p id="progress-text">問題 1 / 10</p>
+            
+            <div class="card-container">
+                <div id="question-card">
+                    <div class="card-face card-front">
+                        <p id="question-text">問題將會顯示在這裡</p>
+                    </div>
+                    <div class="card-face card-back">
+                        <span id="answer-type"></span>
+                        <p id="answer-explanation">這是答案的解釋</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="answer-buttons">
+                <button class="orid-btn" id="btn-o" data-type="O">O (客觀事實)</button>
+                <button class="orid-btn" id="btn-r" data-type="R">R (感受反應)</button>
+                <button class="orid-btn" id="btn-i" data-type="I">I (詮釋意義)</button>
+                <button class="orid-btn" id="btn-d" data-type="D">D (行動決定)</button>
+            </div>
+        </div>
+        
+        <!-- 結果畫面 -->
+        <div class="result-screen" id="result-screen">
+            <h1 class="tool-title">挑戰完成！</h1>
+            <p id="score-text">你的分數是：</p>
+            <p id="score-value">100</p>
+            <p id="final-message">太棒了！你對 ORID 非常了解！</p>
+            <button class="restart-btn" id="restart-btn">再次挑戰</button>
+        </div>
+
+        <footer class="tool-footer">
+            <p>此工具由<a href="https://flipedu.parenting.com.tw/" target="_blank" rel="noopener noreferrer">翻轉教育</a>開發</p>
+        </footer>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const questions = [
+                { question: "今天會議中，誰提出了反對意見？", type: "O", explanation: "這是一個關於客觀事實的問題，答案是具體的人名或事件，不涉及個人感受或觀點。" },
+                { question: "聽到這個消息時，你第一個念頭是什麼？", type: "R", explanation: "這個問題引導對方分享內心的直接感受、情緒或聯想，屬於感受反應層次。" },
+                { question: "你認為這件事對我們團隊最大的啟發是什麼？", type: "I", explanation: "這個問題要求思考事件背後的意義、價值和學習點，屬於詮釋意義層次。" },
+                { question: "根據這次的討論，我們下一步應該怎麼做？", type: "D", explanation: "這個問題聚焦於未來的行動方案、計畫與決策，屬於行動決定層次。" },
+                { question: "在剛剛的影片中，你看到了哪些顏色？", type: "O", explanation: "這是關於觀察到的具體、客觀資訊，沒有詮釋空間。" },
+                { question: "這次的活動讓你感覺最有趣的部分是哪裡？", type: "R", explanation: "這是在探詢個人的主觀感受和情緒反應，例如「有趣」、「驚訝」或「無聊」。" },
+                { question: "為什麼你覺得這個方法是目前最好的選擇？", type: "I", explanation: "這是在探討做出判斷背後的理由、觀點和深層意義。" },
+                { question: "為了達成目標，我們需要分配哪些資源？", type: "D", explanation: "這是在規劃具體的執行步驟和行動方案，是決策層面的提問。" },
+                { question: "你對這個新設計有什麼地方感到擔心嗎？", type: "R", explanation: "「擔心」是一種情緒和感受，這個問題在引導分享內在的感覺。" },
+                { question: "從這次失敗中，我們學到了什麼最重要的教訓？", type: "I", explanation: "這是在提煉經驗、尋找模式和總結意義，是詮釋層次的核心。" }
+            ];
+
+            let currentQuestionIndex = 0;
+            let score = 0;
+            let shuffledQuestions = [];
+
+            // DOM 元素
+            const startScreen = document.getElementById('start-screen');
+            const gameArea = document.getElementById('game-area');
+            const resultScreen = document.getElementById('result-screen');
+            
+            const startBtn = document.getElementById('start-btn');
+            const restartBtn = document.getElementById('restart-btn');
+
+            const questionCard = document.getElementById('question-card');
+            const questionText = document.getElementById('question-text');
+            const answerType = document.getElementById('answer-type');
+            const answerExplanation = document.getElementById('answer-explanation');
+            
+            const progressText = document.getElementById('progress-text');
+            const progressBar = document.getElementById('progress-bar');
+            
+            const answerButtons = document.querySelectorAll('.orid-btn');
+
+            // 初始化
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', startGame);
+            answerButtons.forEach(button => {
+                button.addEventListener('click', handleAnswer);
+            });
+
+            // 函數
+            function startGame() {
+                startScreen.style.display = 'none';
+                resultScreen.style.display = 'none';
+                gameArea.style.display = 'block';
+                
+                currentQuestionIndex = 0;
+                score = 0;
+                shuffledQuestions = shuffleArray([...questions]);
+                
+                showQuestion();
+            }
+
+            function showQuestion() {
+                resetState();
+                const question = shuffledQuestions[currentQuestionIndex];
+                questionText.textContent = question.question;
+                
+                const progress = ((currentQuestionIndex) / shuffledQuestions.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `問題 ${currentQuestionIndex + 1} / ${shuffledQuestions.length}`;
+            }
+
+            function handleAnswer(e) {
+                const selectedButton = e.target;
+                const selectedType = selectedButton.dataset.type;
+                const correctType = shuffledQuestions[currentQuestionIndex].type;
+                
+                answerButtons.forEach(btn => btn.disabled = true);
+                selectedButton.classList.add('selected');
+
+                if (selectedType === correctType) {
+                    score++;
+                    selectedButton.classList.add('correct');
+                } else {
+                    selectedButton.classList.add('incorrect');
+                    document.querySelector(`.orid-btn[data-type="${correctType}"]`).classList.add('correct');
+                }
+
+                showAnswer();
+                
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < shuffledQuestions.length) {
+                        showQuestion();
+                    } else {
+                        showResults();
+                    }
+                }, 2500); // 停留 2.5 秒看答案
+            }
+
+            function showAnswer() {
+                const question = shuffledQuestions[currentQuestionIndex];
+                answerType.textContent = `${question.type} - ${getTypeName(question.type)}`;
+                answerType.style.backgroundColor = getButtonColor(question.type);
+                answerExplanation.textContent = question.explanation;
+                questionCard.classList.add('is-flipped');
+            }
+            
+            function showResults() {
+                gameArea.style.display = 'none';
+                resultScreen.style.display = 'flex';
+                
+                const scoreValue = document.getElementById('score-value');
+                const finalMessage = document.getElementById('final-message');
+                const percentage = Math.round((score / shuffledQuestions.length) * 100);
+                
+                scoreValue.textContent = `${percentage}`;
+                
+                if (percentage === 100) {
+                    finalMessage.textContent = '太厲害了！你是 ORID 大師！';
+                } else if (percentage >= 70) {
+                    finalMessage.textContent = '非常棒！你對 ORID 的掌握度很高！';
+                } else if (percentage >= 40) {
+                    finalMessage.textContent = '不錯喔，再多練習幾次會更熟悉！';
+                } else {
+                    finalMessage.textContent = '別氣餒，ORID 需要練習，再挑戰一次吧！';
+                }
+                
+                // 推送 GTM 自訂事件
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({
+                    'event': 'aitool_success'
+                });
+                console.log("GTM event 'aitool_success' pushed to dataLayer.");
+            }
+
+            function resetState() {
+                questionCard.classList.remove('is-flipped');
+                setTimeout(() => { // 等待翻轉動畫結束後再清除按鈕樣式
+                    answerButtons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.classList.remove('selected', 'correct', 'incorrect');
+                    });
+                }, 300);
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            function getTypeName(type) {
+                switch(type) {
+                    case 'O': return '客觀事實';
+                    case 'R': return '感受反應';
+                    case 'I': return '詮釋意義';
+                    case 'D': return '行動決定';
+                    default: return '';
+                }
+            }
+
+            function getButtonColor(type) {
+                switch(type) {
+                    case 'O': return 'var(--o-color)';
+                    case 'R': return 'var(--r-color)';
+                    case 'I': return 'var(--i-color)';
+                    case 'D': return 'var(--d-color)';
+                    default: return '#ccc';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
